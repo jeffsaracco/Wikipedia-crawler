@@ -17,7 +17,7 @@ require 'cgi'
 ROOT_URL = 'http://en.wikipedia.org'
 
 def search_url(query)
-  "http://en.wikipedia.org/w/index.php?search=#{CGI.escape(query)}"
+  "#{ROOT_URL}/w/index.php?search=#{CGI.escape(query)}"
 end
 
 def title_from_url(url)
@@ -44,7 +44,7 @@ def first_link(url)
       # if we've found two parentheses, return the next link you see
       if parenth == 0 or (parenth > 1 and (parenth % 2 == 0))
         if c.name == 'a'
-          return ROOT_URL + c.attributes["href"].value
+          return "#{ROOT_URL}#{c.attributes["href"].value}"
         end
       end
     
