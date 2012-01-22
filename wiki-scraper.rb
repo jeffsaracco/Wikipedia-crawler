@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 
 # wiki-scraper.rb by Jordan Scales
-# http://jordanscales.com
-# http://programthis.net
 #
 # Tests the idea that the first link on each wikipedia article
 #   will eventually lead to philosophy
@@ -10,6 +8,8 @@
 # Usage:
 #   ruby wiki-scraper.rb daft punk
 
+require 'rubygems'
+require 'mechanize'
 require 'nokogiri'
 require 'open-uri'
 require 'cgi'
@@ -20,59 +20,47 @@ def search_url(query)
   "#{ROOT_URL}/w/index.php?search=#{CGI.escape(query)}"
 end
 
-def title_from_url(url)
-  doc = Nokogiri::HTML(open(url))
-  doc.css('h1#firstHeading').first.content
+def get_page query
+  @a.get query
 end
 
-def title_from_query(query)
-  title_from_url search_url(query)
-end
-
-def first_link(url)
-  doc = Nokogiri::HTML(open(url))
-  parenth = 0
+def first_link page
+  # This was an attempt to get the actual first link but it does not ignore links in the parentheses (which causes loops)
+  # href = page.search("//div[@class='mw-content-ltr']").xpath('/html/body/div[3]/div[3]/div[4]/p/a').first.attributes['href'].value
   
-  paragraphs = doc.css('div.mw-content-ltr > p')
+  # links that begin with /wiki/ and are not a wikipedia info page ex. /wiki/Wikipedia:info
+  links = page.links_with(:href => %r{^\/wiki\/.*}).select{|l| (l.href =~ /\/wiki\/.*:.*/) == nil}
 
-  # cycle through each paragraph
-  paragraphs.each do |p|
-    
-    # in each paragraph, go through each node
-    p.children.each do |c|
-      
-      # if we've found two parentheses, return the next link you see
-      if parenth == 0 or (parenth > 1 and (parenth % 2 == 0))
-        if c.name == 'a'
-          return "#{ROOT_URL}#{c.attributes["href"].value}"
-        end
-      end
-    
-      # incremement the number of parentheses we've seen
-      if /\(/ === c.to_s
-        parenth += 1
-      elsif /\)/ === c.to_s
-        parenth += 1
-      end
-    end
+  #is there a link to philosophy on the page
+  does_philosophy_exist = links.select{|l| l.href =~ /\/wiki\/Philosophy/}
+  #if so grab it
+  if(does_philosophy_exist.count > 0)
+    href = does_philosophy_exist.first.href
+  else
+    href = links.sample.href
   end
-  return nil if( paragraphs.count == 0 ) 
+  "#{ROOT_URL}#{href}"
 end
 
-def first_link_from_query(query)
-  first_link search_url(query)
-end
+
+@a = Mechanize.new { |agent|
+  agent.user_agent_alias = 'Mac Safari'
+}
+
+philosophy_title = "Philosophy - Wikipedia, the free encyclopedia"
 
 start = ARGV.join(' ')
 url = search_url start
-title = title_from_url url
+page = get_page url
+title = page.title
 puts "1: #{title}"
 count = 2
 
-while title != 'Philosophy'
-  url = first_link url
+while title != philosophy_title
+  url = first_link page
   if !url.nil?
-    title = title_from_url url
+    page = get_page url
+    title = page.title
     puts "#{count}: #{title}: #{url}"
     count += 1
   else
