@@ -33,8 +33,10 @@ def first_link(url)
   doc = Nokogiri::HTML(open(url))
   parenth = 0
   
+  parens = doc.css('div.mw-content-ltr > p')
+
   # cycle through each paragraph
-  doc.css('div.mw-content-ltr > p').each do |p|
+  parens.each do |p|
     
     # in each paragraph, go through each node
     p.children.each do |c|
@@ -54,6 +56,7 @@ def first_link(url)
       end
     end
   end
+  return nil if( parens.count == 0 ) 
 end
 
 def first_link_from_query(query)
@@ -68,7 +71,12 @@ count = 2
 
 while title != 'Philosophy'
   url = first_link url
-  title = title_from_url url
-  puts "#{count}: #{title}: #{url}"
-  count += 1
+  if !url.nil?
+    title = title_from_url url
+    puts "#{count}: #{title}: #{url}"
+    count += 1
+  else
+    puts "#{start} does not eventually lead to Philosophy"
+    break
+  end
 end
