@@ -33,10 +33,10 @@ def first_link(url)
   doc = Nokogiri::HTML(open(url))
   parenth = 0
   
-  parens = doc.css('div.mw-content-ltr > p')
+  paragraphs = doc.css('div.mw-content-ltr > p')
 
   # cycle through each paragraph
-  parens.each do |p|
+  paragraphs.each do |p|
     
     # in each paragraph, go through each node
     p.children.each do |c|
@@ -56,7 +56,7 @@ def first_link(url)
       end
     end
   end
-  return nil if( parens.count == 0 ) 
+  return nil if( paragraphs.count == 0 ) 
 end
 
 def first_link_from_query(query)
